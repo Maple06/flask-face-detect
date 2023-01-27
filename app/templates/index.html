@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title>Face Detection test</title>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8  offset-lg-2">
+                    <h3 class="mt-5">Face Detection</h3>
+                    <img src="{{ url_for('video_feed') }}" width="40%">
+                </div>
+            </div>
+        </div>
+        <br>
+        {% for item in items %}
+            <h5>{{ status['s'] }}</h5>
+        {% endfor %}
+        <br>
+        <button type="submit"><a href="/getPhoto">Take Photo</a></button>
+    </body>
+</html>

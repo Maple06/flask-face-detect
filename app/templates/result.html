@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Detection Result</title>
+</head>
+    <body>
+        <h3>Result</h3>
+        <br>
+        <img src="/static/Images/{{ resultFileName }}" alt="Face Picture" style="width: 40%">
+        <br>
+        {% if status["faces"] != "No Face Detected" %}
+            <p>Face Detected: {{ status["faces"] }}. Confidence: {{ status["confidence"] }}.</p>
+        {% else %}
+            <p>No Face Detected</p>
+        {% endif %}
+        <br>
+        <a href="/">Back to home</a>
+    </body>
+</html>
