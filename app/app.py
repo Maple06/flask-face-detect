@@ -12,7 +12,7 @@ from PIL import Image
 import pathlib
 import time
 
-app = Flask(__name__, static_folder='D:\\Programming\\Workbooks\\01. Kazee\\Web\\static')
+app = Flask(__name__)
 app.debug = True
 
 camera = cv2.VideoCapture(0)
@@ -48,7 +48,7 @@ def gen_frames():
             frame = buffer.tobytes()
             if takePhotoReq:
                 timeNow = strftime("%d-%b-%y.%H-%M-%S", gmtime())
-                cv2.imwrite(f'static/images/{timeNow}.png',coloredframe)
+                cv2.imwrite(f'static/Images/{timeNow}.png',coloredframe)
                 recentPicTaken = f'{timeNow}.png'
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
@@ -70,7 +70,9 @@ def encode_faces():
         except IndexError:
             pass
 
+print("Encoding faces...")
 encode_faces()
+print("Encoding done!")
 
 def recog(frame):
     global status
@@ -151,30 +153,36 @@ def getPhoto():
     takePhotoReq = True
     return redirect("/")
 
-@app.route("/result")
+@app.route("/result", methods=["GET", "POST"])
 def result():
-    global face_locations, face_encodings, face_names, known_face_encodings, known_face_names
+    if request.method == "POST":
+        global recentPicTaken
+        os.remove(os.path.join("static/Images/", recentPicTaken))
+        os.remove(os.path.join("static/Images/", f"det-{recentPicTaken}"))
+        return redirect("/")
+    else:
+        global face_locations, face_encodings, face_names, known_face_encodings, known_face_names
 
-    filename = request.args.get('fn')
+        filename = request.args.get('fn')
 
-    filename = os.path.join("static/images/", filename)
-    frame = cv2.imread(filename)
+        filename = os.path.join("static/Images/", filename)
+        frame = cv2.imread(filename)
 
-    try:
-        if filename == None:
-            return "<h2>Not a valid file name</h2>"
-    except ValueError:
-        pass
+        try:
+            if filename == None:
+                return "<h2>Not a valid file name</h2>"
+        except ValueError:
+            pass
 
-    frame = recog(frame)
+        frame = recog(frame)
 
-    filename = filename[14:]
+        filename = filename[14:]
 
-    cv2.imwrite(f'static/images/det-{str(filename)}',frame)
+        cv2.imwrite(f'static/Images/det-{str(filename)}',frame)
 
-    resultFileName = "det-"+str(filename)
+        resultFileName = "det-"+str(filename)
 
-    return render_template("result.html", resultFileName=resultFileName, status=status)
+        return render_template("result.html", resultFileName=resultFileName, status=status)
 
 @app.route("/api")
 def api():
@@ -184,12 +192,12 @@ def api():
         return "<h2>No link argument found</h2>"
     response = requests.get(picLink, stream=True)
     timeNow = strftime("%d-%b-%y.%H-%M-%S", gmtime())
-    filename = f"static/images/api-{timeNow}.png"
+    filename = f"static/Images/api-{timeNow}.png"
     with open(filename, 'wb') as out_file:
         shutil.copyfileobj(response.raw, out_file)
     del response
 
-    frame = cv2.imread(f"static/images/api-{timeNow}.png")
+    frame = cv2.imread(f"static/Images/api-{timeNow}.png")
 
     try:    
         if filename == None:

@@ -10,7 +10,7 @@ COPY ./requirements.txt /code/requirements.txt
 
 RUN pip install -U pip wheel cmake
 
-RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
+# RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 

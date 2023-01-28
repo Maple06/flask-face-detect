@@ -17,6 +17,8 @@
             <p>No Face Detected</p>
         {% endif %}
         <br>
-        <a href="/">Back to home</a>
+        <form action="/result" method="POST">
+            <button type="submit" name="home" value="home"><a style="text-decoration: none; color:black;">Back to home and delete this picture</a></button>
+        </form>
     </body>
 </html>
