@@ -13,41 +13,99 @@ takePhotoReq = False
 
 recentPicTaken = ""
 
-def gen_frames():
+def gen_frames(currentPath):
     global takePhotoReq,recentPicTaken
     while True:
-        success, frame = camera.read()  # read the camera frame
-        gray = cv2.cvtColor(np.float32(frame), cv2.COLOR_RGB2GRAY)
+        success, frame = camera.read()
         if not success:
             break
         else:
-            ret, buffer = cv2.imencode('.jpg', frame)
             coloredframe = frame
-            frame = buffer.tobytes()
-            if takePhotoReq:
+            if currentPath == "/video_feed_live/":
+                gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+
+                # Load the cascade
+                face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+                
+                # Detect faces
+                faces = face_cascade.detectMultiScale3(gray, 1.1, 5, outputRejectLevels = True)
+                try :
+                    face_detected = list(faces[0].tolist())
+                    weights = list(faces[2].tolist())
+                    updated_weights = weights.copy()
+                
+                    # Deleting faces that under 60% confidence
+                    for i in range(len(weights)) :
+                        if weights[i] < 6 :
+                            face_detected.pop(i)
+                            updated_weights.pop(i)
+                    weights_json = {}
+                    count = 1
+                    for i in updated_weights :
+                        i = '{:.2f}'.format(i*10)
+                        if float(i) > 100:
+                            i = '100.00'
+                        weights_json[count] = i+"%"
+                        count += 1
+
+                    # Drawing a rectangle around detected face(s)
+                    count = 0
+                    for (x, y, w, h) in face_detected:
+                        count += 1
+                        cv2.rectangle(coloredframe,(x,y),(x+w,y+h),(255,255,0),2)
+                        cv2.putText(coloredframe, f"{str(count)} - {str(weights_json[count])}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+                except:
+                    pass
+
+            _, buffer = cv2.imencode('.jpg', coloredframe, (cv2.IMWRITE_JPEG_QUALITY, 95))
+            if currentPath == "/video_feed_takepic/" and takePhotoReq:
                 timeNow = strftime("%d-%b-%y.%H-%M-%S", gmtime())
                 cv2.imwrite(f'static/Images/{timeNow}.png',coloredframe)
                 recentPicTaken = f'{timeNow}.png'
+            
+            coloredframe = buffer.tobytes()
+
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + coloredframe + b'\r\n')
 
 @app.route('/')
 def index():
+    return """
+    <br>
+    <h3>Flask Face Detection (Live, Take Pic, API)</h3>
+    <br><br>
+    <ul>
+        <li><a href="/live">Live Face Detection</a></li>
+        <li><a href="/takepic">Face Detection with Selfie</a></li>
+        <li><a href="/api">API + Little Frontend (Mostly POST Request)</a></li>
+    </ul>
+    """
+
+@app.route('/live/')
+def live():
+    return render_template('live.html')
+
+@app.route('/takepic/')
+def takepic():
     global takePhotoReq, recentPicTaken
     if takePhotoReq:
         takePhotoReq = False
         return redirect("/result?fn="+recentPicTaken)
-    return render_template('index.html')
+    return render_template('takepic.html')
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/video_feed_live/')
+def video_feed_live():
+    return Response(gen_frames(request.path), mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+@app.route('/video_feed_takepic/')
+def video_feed_takepic():
+    return Response(gen_frames(request.path), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route("/getPhoto")
+@app.route("/getPhoto/")
 def getPhoto():
     global takePhotoReq
     takePhotoReq = True
-    return redirect("/")
+    return redirect("/takepic/")
 
 @app.route("/result", methods=["GET", "POST"])
 def result():
@@ -55,7 +113,7 @@ def result():
     if request.method == "POST":
         os.remove(os.path.join("static/Images/", recentPicTaken))
         os.remove(os.path.join("static/Images/", f"det-{recentPicTaken}"))
-        return redirect("/")
+        return redirect("/takepic/")
     else:
         filename = request.args.get('fn')
 
