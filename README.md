@@ -1,12 +1,10 @@
-# Face Recognition Website using Flask, OpenCV, and face-recognition library.
+# Face Recognition Website using Flask and OpenCV.
 ### Features
 1. Live webcam
 2. Picture taking
-3. Face recognition from recent taken picture
-4. Face recognition API from internet pictures
+3. Face detection from recent taken picture
 
 ### How To Use
-Get into localhost:5000 after running app.py, on landing page ("/" directory) webcam will be shown with a take picture button. When button pressed picture will be saved in local folder and image will be processed and shown at /result directory.
-REST API is on /api directory with a mandatory "l" argument. (localhost:5000/api?l=https://example.com/test.jpg) l argument must be an internet image link.
+Build a docker image by `docker build -t <image-name> .` and then make a container with `docker run --name <container-name> -p 8000:8000` and then go to localhost:8000 after running the container, on landing page ("/" directory) webcam will be shown with a take picture button. When button pressed picture will be saved in local folder and image will be processed and shown at /result directory. Result image will be destroyed on back to home button clicked.
 
-### This is a intern test module for PT Kazee Digital Indonesia, Waktoo Product.
+### This is an intern test module for PT Kazee Digital Indonesia, Waktoo Product.
