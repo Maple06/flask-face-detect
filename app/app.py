@@ -1,20 +1,26 @@
-from flask import Flask, render_template, Response, request, redirect, make_response, jsonify
-import cv2
+from flask import Flask, render_template, Response, request, redirect, jsonify
 from time import strftime, gmtime
-import numpy as np
-import os
+import cv2, os, numpy as np
 
 app = Flask(__name__)
 app.debug = True
-
-camera = cv2.VideoCapture(0)
 
 takePhotoReq = False
 
 recentPicTaken = ""
 
+### Putting cv2.VideoCapture here makes the camera cannot be released. But a much faster camera load.
+### Loads a bit slower on the start before localhost started but faster when camera is going to be used each time.
+camera = cv2.VideoCapture(0)
+
 def gen_frames(currentPath):
     global takePhotoReq,recentPicTaken
+
+    ### Putting cv2.VideoCapture here makes every load much slower (+15 sec), but it'll close everytime the camera is unused.
+    # print("Opening camera...")
+    # camera = cv2.VideoCapture(0)
+    # print("Camera opened")
+    
     while True:
         success, frame = camera.read()
         if not success:
@@ -67,6 +73,8 @@ def gen_frames(currentPath):
 
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + coloredframe + b'\r\n')
+    ### This camera.release() function will only work when cv2.VideoCapture is inside the gen_frames function 
+    camera.release()
 
 @app.route('/')
 def index():
@@ -121,12 +129,6 @@ def result():
 
         try:
             if filename == None:
-                return "<h2>Not a valid file name</h2>"
-        except ValueError:
-            pass
-
-        try:
-            if filename == None:
                 return "<h3>Not a valid filename.<h3><h5><a href='/'>Go back to home</a></h5>"
         except ValueError:
             pass
@@ -147,9 +149,9 @@ def result():
             weights = list(faces[2].tolist())
             updated_weights = weights.copy()
         
-            # Deleting faces that under 50% confidence
+            # Deleting faces that under 60% confidence
             for i in range(len(weights)) :
-                if weights[i] < 5 :
+                if weights[i] < 6 :
                     face_detected.pop(i)
                     updated_weights.pop(i)
             weights_json = {}
@@ -180,6 +182,61 @@ def result():
             cv2.imwrite(f'static/Images/det-{str(filename)}',img)
             resultFileName = "det-"+str(filename)
             return render_template("result.html", resultFileName=resultFileName, status={"face-count": 0, "confidence": "0%"})
+
+@app.route("/api/", methods=["GET", "POST"])
+def api():
+    if request.method == "POST":
+        # Get image data from POST request
+        image = request.files["image"]
+
+        # Decode image
+        image_data = cv2.imdecode(np.frombuffer(image.read(), np.uint8), -1)
+
+        # Set filename
+        timeNow = strftime("%d-%b-%y.%H-%M-%S", gmtime())
+        filename = f"static/Images/api-{timeNow}.jpg"
+
+        # Save image to local storage
+        cv2.imwrite(filename, image_data)
+
+        # Read recently grabbed image to cv2
+        img = cv2.imread(filename)
+
+        # Convert into grayscale
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Load the cascade
+        face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+        
+        # Detect faces
+        faces = face_cascade.detectMultiScale3(gray, 1.1, 5, outputRejectLevels = True)
+        print(faces)
+        try :
+            face_detected = list(faces[0].tolist())
+            weights = list(faces[2].tolist())
+            updated_weights = weights.copy()
+        
+            # Deleting faces that under 60% confidence
+            for i in range(len(weights)) :
+                if weights[i] < 6 :
+                    face_detected.pop(i)
+                    updated_weights.pop(i)
+            weights_json = {}
+            count = 1
+            for i in updated_weights :
+                i = '{:.2f}'.format(i*10)
+                if float(i) > 100:
+                    i = '100.00'
+                weights_json[count] = i+"%"
+                count += 1
+
+            os.remove(filename)
+            return jsonify({"face-count": len(face_detected), "confidence": weights_json})
+        except :
+            os.remove(filename)
+            return jsonify({"face-count": 0, "confidence": "0%"})
+    else:
+        return render_template("api.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

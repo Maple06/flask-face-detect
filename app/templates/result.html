@@ -12,7 +12,7 @@
         <img src="/static/Images/{{ resultFileName }}" alt="Face Picture" style="width: 40%">
         <br>
         {% if status["faces"] != 0 %}
-            <p>Faces Amount Detected: {{ status["face-count"] }}. Confidence: {{ status["confidence"] }}.</p>
+            <p>Amount of Faces Detected: {{ status["face-count"] }}. Confidence: {{ status["confidence"] }}.</p>
         {% else %}
             <p>No Face Detected</p>
         {% endif %}
