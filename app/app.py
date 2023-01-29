@@ -40,9 +40,9 @@ def gen_frames(currentPath):
                     weights = list(faces[2].tolist())
                     updated_weights = weights.copy()
                 
-                    # Deleting faces that under 60% confidence
+                    # Deleting faces that under 50% confidence
                     for i in range(len(weights)) :
-                        if weights[i] < 6 :
+                        if weights[i] < 5 :
                             face_detected.pop(i)
                             updated_weights.pop(i)
                     weights_json = {}
@@ -149,9 +149,9 @@ def result():
             weights = list(faces[2].tolist())
             updated_weights = weights.copy()
         
-            # Deleting faces that under 60% confidence
+            # Deleting faces that under 50% confidence
             for i in range(len(weights)) :
-                if weights[i] < 6 :
+                if weights[i] < 5 :
                     face_detected.pop(i)
                     updated_weights.pop(i)
             weights_json = {}
@@ -216,9 +216,9 @@ def api():
             weights = list(faces[2].tolist())
             updated_weights = weights.copy()
         
-            # Deleting faces that under 60% confidence
+            # Deleting faces that under 50% confidence
             for i in range(len(weights)) :
-                if weights[i] < 6 :
+                if weights[i] < 5 :
                     face_detected.pop(i)
                     updated_weights.pop(i)
             weights_json = {}
