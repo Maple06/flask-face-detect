@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Takepic Result - Flask Face Detection</title>
+    </head>
+    <body>
+        <h3>Result</h3>
+        <br>
+        <img src="/static/Images/{{ resultFileName }}" alt="Face Picture" style="width: 40%">
+        <br>
+        {% if status["faces"] != 0 %}
+            <p>Amount of Faces Detected: {{ status["face-count"] }}. Confidence: {{ status["confidence"] }}.</p>
+        {% else %}
+            <p>No Face Detected</p>
+        {% endif %}
+        <br>
+        <form action="/result" method="POST">
+            <button type="submit" name="home" value="home"><a style="text-decoration: none; color:black;">Back to home and delete this picture</a></button>
+        </form>
+    </body>
+</html>
